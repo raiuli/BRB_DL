@@ -63,6 +63,7 @@ mtcd=calMatchingDegreeDisV2(ttt,attrWeight);
 ruleweight=x1(numOfAttrWeight+1:numOfAttrWeight+numOfRuleWeight);
 %z=sum(mtcd.*ruleweight,2)
 activationWeight=(mtcd.*ruleweight)./(sum(mtcd.*ruleweight,2));
+prevactivationWeight=activationWeight;
 activationWeight=activationWeight.*L3;
 a=x1(numOfAttrWeight +numOfRuleWeight+1:numOfVariables-numOfconRefval-numOfAntecedentsRefVals);
 beta=reshape(a,[numOfconRefval,numOfRuleWeight])';

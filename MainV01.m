@@ -5,7 +5,7 @@ clc;
 format compact;
 fclose('all');
 
-addpath(pwd+"/DE");
+%addpath(pwd+"/DE");
 addpath(pwd+"/BRBADE");
 %load('randomConf.mat','s')
 formatOut = 'yyyy-mmm-dd_HH_MM_SS';
@@ -37,6 +37,7 @@ fprintf(fid_x1,'Starting program %s \n',dateString);
 %fid = fopen ('Dataset/JISC_Dataset_Paper_refined-2.csv', 'r');
 %fid = fopen ('Dataset/JISC_Dataset_Paper_refined-2_small.csv', 'r');
 fid = fopen ('Dataset/PUE_FB.csv', 'r');
+fid = fopen ('Dataset/SmapleDataset.csv', 'r');
 %fid=fopen('Dataset/input50000.csv','r');
 %fid = fopen ('SecDataset.txt', 'r');
 %fid = fopen ('SecDatasetstiny.txt', 'r');
@@ -48,7 +49,8 @@ while ~feof(fid)
     numberOfInputData=numberOfInputData+1;
     line=fgetl(fid);
     if numberOfInputData==1
-        keySet=split(line,',');
+        line=strtrim(line)
+        keySet=split(strtrim(line),',');
         %valueSet = {ones};
         % mapObj = containers.Map(keySet,valueSet);
         
@@ -63,11 +65,13 @@ end
 fclose(fid);
 
 indices = crossvalind('Kfold',allvalueSet(:,3),10);
-ffilename = strcat('Dataset/PUE_FB','_indices_','.csv');
+ffilename = strcat('Dataset/SmapleDataset','_indices','.csv');
 csvwrite(ffilename,indices);
 %indices = csvread('Dataset/JISC_Dataset_Paper_refined-2_indices_.csv');
 %indices = csvread('Dataset/JISC_Dataset_Paper_refined-2_small_indices_.csv');
 %indices = csvread('Dataset/input50000_indices_.csv');
+%indices = csvread('Dataset/PUE_FB_indices_.csv');
+%indices = csvread('Dataset/SmapleDataset_indices.csv');
 for counter =1:5
     test = (indices == counter);
     train = ~test;
@@ -233,35 +237,46 @@ for counter =1:5
         brbConfigdata.numOfbeliefDegrees=numOfbeliefDegrees;
         brbConfigdata.brbTree=brbTree(brdTreeID);
         brbConfigdata.rule=rule;
-        tstart = tic;
-        formatOut = 'FFF';
-        tS=datetime('now');
-        f=objFunAllParallelDisv1(x0,brbConfigdata);
-        tE=datetime('now');
-        datestr(tE-tS,formatOut)
-        fprintf (fid_x1,'\nF=%d\n',f);
-        fprintf ('\nF=%d\n',f);
-        telapsed = toc(tstart)
-        
+%         tstart = tic;
+%         formatOut = 'FFF';
+%         tS=datetime('now');
+%         f=objFunAllParallelDisv1(x0,brbConfigdata);
+%         tE=datetime('now');
+%         datestr(tE-tS,formatOut)
+%         fprintf (fid_x1,'\nF=%G\n',f);
+%         fprintf ('\nF=%G\n',f);
+%         telapsed = toc(tstart)
+         fprintf (fid_x1,'\nBRBES actualOutput=\n');
+        fprintf ('\nBRBES actualOutput=\n');
+        fprintf (fid_x1,'%G, ',observedOutput);
+        fprintf ('%G, ',observedOutput);
         tstart = tic;
         formatOut = 'FFF';
         tS=datetime('now');
         [f, predictatedOutputBRB]=objFunAllParallelDisv2(x0,brbConfigdata);
         tE=datetime('now');
-        datestr(tE-tS,formatOut)
-        fprintf (fid_x1,'\nF=%d\n',f);
-        fprintf ('\nF=%d\n',f);
-        telapsed = toc(tstart)
+        datestr(tE-tS,formatOut);
+        fprintf (fid_x1,'\nBRBES predictatedOutput=\n');
+        fprintf ('\nBRBES predictatedOutput=\n');
+        fprintf (fid_x1,'%G, ',predictatedOutputBRB);
+        fprintf ('%G, ',predictatedOutputBRB);
+        fprintf (fid_x1,'\nBRBES F=%G\n',f);
+        fprintf ('\nBRBES F=%G\n',f);
+        telapsed = toc(tstart);
         
         tstart = tic;
         formatOut = 'FFF';
         tS=datetime('now');
         [f, predictatedOutputBRB_DL]=BRB_DLv01(x0,brbConfigdata);
         tE=datetime('now');
-        datestr(tE-tS,formatOut)
-        fprintf (fid_x1,'\nF=%d\n',f);
-        fprintf ('\nF=%d\n',f);
-        telapsed = toc(tstart)
+        datestr(tE-tS,formatOut);
+        fprintf (fid_x1,'\nBRB_DL predictatedOutput=\n');
+        fprintf ('\nBRB_DL predictatedOutput=\n');
+        fprintf (fid_x1,'%G, ',predictatedOutputBRB_DL);
+        fprintf ('%G, ',predictatedOutputBRB_DL);
+        fprintf (fid_x1,'\nBRB_DL F=%G\n',f);
+        fprintf ('\nBRB_DL F=%G\n',f);
+        telapsed = toc(tstart);
         
         index=[1:1:length(observedOutput)];
         
@@ -270,7 +285,7 @@ for counter =1:5
         dateString = datestr(datetime('now'),formatOut);
         s = strcat('Graph/simulation_result_',dateString,'_',num2str(counter),'.png');
         plot(index,observedOutput,index,predictatedOutputBRB,index,predictatedOutputBRB_DL);
-        legend('actualOutput','predictatedOutputBRB','predictatedOutputBRB_DL');
+        legend('actualOutput','predictatedOutputBRB','predictatedOutputBRB_DL','Location','SouthEast');
         saveas(gcf,s);
     end
 end
