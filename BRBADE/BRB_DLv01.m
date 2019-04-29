@@ -1,4 +1,4 @@
-function [f, outputOpti]=objFunAllParallelDisv2(x1,brbConfigdata)
+function [f, outputOpti]=BRB_DLv01(x1,brbConfigdata)
 %tic;
 conseQuentRef=brbConfigdata.conseQuentRef;
 numOfAttrWeight=    brbConfigdata.numOfAttrWeight;
@@ -53,13 +53,17 @@ attrWeight=x1(1:numOfAttrWeight);
 % for trsId=1:size(transformedRefVal,1)
 %     transformedRefValM(:,:,trsId)=cell2mat(transformedRefVal(trsId));
 % end 
-
+L2=ttt(:,:,1).*ttt(:,:,2);
+SumofW=sum(L2,2);
+L3=L2./SumofW;
+L3(isnan(L3))=0;
 crispValue=zeros(sizeOfData,1);
 mtcd=calMatchingDegreeDisV2(ttt,attrWeight);
 
 ruleweight=x1(numOfAttrWeight+1:numOfAttrWeight+numOfRuleWeight);
 %z=sum(mtcd.*ruleweight,2)
 activationWeight=(mtcd.*ruleweight)./(sum(mtcd.*ruleweight,2));
+activationWeight=activationWeight.*L3;
 a=x1(numOfAttrWeight +numOfRuleWeight+1:numOfVariables-numOfconRefval-numOfAntecedentsRefVals);
 beta=reshape(a,[numOfconRefval,numOfRuleWeight])';
 %findMN
