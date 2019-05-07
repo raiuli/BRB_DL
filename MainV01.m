@@ -284,9 +284,105 @@ for counter =1:5
         formatOut = 'yyyy-mmm-dd_HH_MM_SS';
         dateString = datestr(datetime('now'),formatOut);
         s = strcat('Graph/simulation_result_',dateString,'_',num2str(counter),'.png');
-        plot(index,observedOutput,index,predictatedOutputBRB,index,predictatedOutputBRB_DL);
+        plot(index,observedOutput,'-b',index,predictatedOutputBRB,'--r',index,predictatedOutputBRB_DL,'-.k');
         legend('actualOutput','predictatedOutputBRB','predictatedOutputBRB_DL','Location','SouthEast');
+        grid on
         saveas(gcf,s);
+        
+                telapsed = toc(tstart)
+        display('starting Optimization------------------------------------------')
+        
+        % implementing DE
+        % Initialization and run of differential evolution optimizer.
+        % VTR		"Value To Reach" (stop when ofunc < VTR)
+        VTR = 1.e-6;
+        % D		number of parameters of the objective function
+        D = numOfVariables;
+        % XVmin,XVmax   vector of lower and bounds of initial population
+        %    		the algorithm seems to work well only if [XVmin,XVmax]
+        %    		covers the region where the global minimum is expected
+        %               *** note: these are no bound constraints!! ***
+        XVmin = lb;
+        XVmax = ub;
+        % y		problem data vector (remains fixed during optimization)
+        y=[];
+        % NP            number of population members
+        NP = 10*numOfVariables;
+        %NP=5;
+        if (NP>300)
+            NP=300;
+        end
+        %NP = 100;
+        % itermax       maximum number of iterations (generations)
+        itermax = 2000;
+        
+        % F             DE-stepsize F ex [0, 2]
+        F = 0.8;
+        
+        % CR            crossover probabililty constant ex [0, 1]
+        CR = 0.5;
+        
+        % strategy       1 --> DE/best/1/exp           6 --> DE/best/1/bin
+        %                2 --> DE/rand/1/exp           7 --> DE/rand/1/bin
+        %                3 --> DE/rand-to-best/1/exp   8 --> DE/rand-to-best/1/bin
+        %                4 --> DE/best/2/exp           9 --> DE/best/2/bin
+        %                5 --> DE/rand/2/exp           else  DE/rand/2/bin
+        
+        strategy = 7;
+        
+        % refresh       intermediate output will be produced after "refresh"
+        %               iterations. No intermediate output will be produced
+        %               if refresh is < 1
+        refresh =50;
+        tic
+        trainparameter=zeros(5,numOfVariables);
+        fvalue=zeros(1,1);
+        nofof=zeros(1,1);
+        % s = struct([])
+        for i=1:1
+            %v(i)= rng(i);
+            %v(i)=rng();
+            [x,f,nf] = BRBaDEv6('objFunAllParallelDisv1',VTR,D,XVmin,XVmax,y,NP,itermax,F,CR,strategy,refresh,brbConfigdata,i)
+            trainparameter(i,:)=x';
+            fvalue(i)=f;
+            nofof(i)=nf;
+        end
+        for i=1:1
+            %formatOut = 'yyyy-mmm-dd_HH_MM_SS';
+            %dateString = datestr(datetime('now'),formatOut);
+            %filename = strcat('randomConf_',num2str(i),'_',dateString,'.mat');
+            %ss=v(i);
+            %save(filename,'ss');
+            fprintf(fid_x1,'\nF=%2.5f\n',fvalue(i));
+            fprintf (fid_x1,'Number of Function call= %2.2f\n',nofof(i));
+        end
+        bestFval=find(fvalue==min(fvalue));
+        x=trainparameter(bestFval,:);
+        fprintf(fid_x1,'\nbest seed=%2.0f\n',bestFval);
+        fprintf(fid_x1,'best F=%2.5f\n',min(fvalue));
+        fprintf(fid_x1,'X=>');
+        fprintf(fid_x1,'%2.4f ',x);
+       
+        
+        % t_data_rule=vertcat(t_data_rule,data_rule);
+        x0=x;
+        fprintf(fid_tp,'%s=',brbTree(brdTreeID).consequent{1});
+        fprintf(fid_tp,'%2.5f,',x0);
+        fprintf(fid_tp,'\n');
+        
+        mapObj(brbTree(brdTreeID).consequent{1})=outputOpti;
+        fprintf(fid_x1,'\nOptimizied value\n');
+        fprintf (fid_x1,'Attribute Weights\n');
+        fprintf (fid_x1,'%2.2f ', x0(1:numOfAttrWeight) );
+        fprintf (fid_x1,'\nRuleWeights\n');
+        fprintf (fid_x1,'%2.2f ', x0(numOfAttrWeight+1:numOfAttrWeight+numOfRuleWeight) );
+        fprintf (fid_x1,'\nBelief Degrees\n');
+        z=x0(numOfAttrWeight+numOfRuleWeight+1:numOfVariables);
+        fprintf (fid_x1,'%2.2f ',z);
+        fprintf (fid_x1,'\nConsequent utlity values\n');
+        fprintf (fid_x1,'%2.2f ', x0(numOfVariables-numOfconRefval-numOfAntecedentsRefVals+1:numOfVariables-numOfAntecedentsRefVals) );
+        fprintf (fid_x1,'\nAntecedent utlity values\n');
+        fprintf (fid_x1,'%2.2f ', x0(numOfVariables-numOfAntecedentsRefVals+1:numOfVariables) );
     end
 end
 dateString = datestr(datetime('now'));
